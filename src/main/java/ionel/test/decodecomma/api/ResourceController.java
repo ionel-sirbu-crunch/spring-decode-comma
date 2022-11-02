@@ -16,7 +16,7 @@ public class ResourceController {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceController.class);
 
     @GetMapping
-    public ResponseEntity<List<String>> getSomeResource(@RequestParam(value = "res") List<String> resources) {
+    public ResponseEntity<List<String>> getSomeResource(@RequestParam("res") List<String> resources) {
 
         LOG.info("Requested resources: {}", resources);
         return ResponseEntity.ok(resources);
