@@ -6,6 +6,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,6 +22,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.stream.Stream;
 
 @SpringBootTest
 class ResourceControllerIntegrationTest {
@@ -84,11 +87,13 @@ class ResourceControllerIntegrationTest {
         Assertions.assertThat(returnedResources).containsExactly("xx yy");
     }
 
-    @Test
-    void plus() throws Exception {
-        String resourceValue = URLEncoder.encode("xx+yy", StandardCharsets.UTF_8);
+    @ParameterizedTest
+    @MethodSource("getSpecialChars")
+    void specialChars(char c) throws Exception {
+        String resourceValue = "xx" + c + "yy";
+        String encodedResourceValue = URLEncoder.encode(resourceValue, StandardCharsets.UTF_8);
         // using URI so that no further encoding takes place
-        URI uri = new URI("/test?res=" + resourceValue);
+        URI uri = new URI("/test?res=" + encodedResourceValue);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get(uri))
                 .andExpect(MockMvcResultMatchers.status().isOk())
@@ -97,7 +102,13 @@ class ResourceControllerIntegrationTest {
         byte[] content = mvcResult.getResponse().getContentAsByteArray();
         List<String> returnedResources = objectMapper.readValue(content, new TypeReference<>() {
         });
-        Assertions.assertThat(returnedResources).containsExactly("xx+yy");
+        Assertions.assertThat(returnedResources).containsExactly(resourceValue);
+    }
+
+    public static Stream<Arguments> getSpecialChars() {
+        // only `,` & space fail from this set
+        return "`¬!\"£$%^&*()-_=+[]{};:'@#~\\|,.<>/? \t\r\n".chars()
+                .mapToObj(i -> Arguments.of((char) i));
     }
 
 }
