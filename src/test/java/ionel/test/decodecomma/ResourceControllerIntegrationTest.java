@@ -17,6 +17,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @SpringBootTest
@@ -64,6 +66,38 @@ class ResourceControllerIntegrationTest {
         List<String> returnedResources = objectMapper.readValue(content, new TypeReference<>() {
         });
         Assertions.assertThat(returnedResources).containsExactlyInAnyOrder("xx", "yy,zz");
+    }
+
+    @Test
+    void space() throws Exception {
+        String resourceValue = URLEncoder.encode("xx yy", StandardCharsets.UTF_8);
+        // using URI so that no further encoding takes place
+        URI uri = new URI("/test?res=" + resourceValue);
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get(uri))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andReturn();
+
+        byte[] content = mvcResult.getResponse().getContentAsByteArray();
+        List<String> returnedResources = objectMapper.readValue(content, new TypeReference<>() {
+        });
+        Assertions.assertThat(returnedResources).containsExactly("xx yy");
+    }
+
+    @Test
+    void plus() throws Exception {
+        String resourceValue = URLEncoder.encode("xx+yy", StandardCharsets.UTF_8);
+        // using URI so that no further encoding takes place
+        URI uri = new URI("/test?res=" + resourceValue);
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get(uri))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andReturn();
+
+        byte[] content = mvcResult.getResponse().getContentAsByteArray();
+        List<String> returnedResources = objectMapper.readValue(content, new TypeReference<>() {
+        });
+        Assertions.assertThat(returnedResources).containsExactly("xx+yy");
     }
 
 }
